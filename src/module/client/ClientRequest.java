@@ -1,23 +1,28 @@
 package module.client;
 
+import java.util.concurrent.CountDownLatch;
+
+import module.server.ExecuteAUpdate;
 import module.server.PSSIServerRun;
 import module.setting.Parameter;
 
 public class ClientRequest
 {
-	public static void send()
+	public static void send( CountDownLatch cdl ) 
 	{
 		int i;
-		int transactionIDInitial = 1000;
+		int transactionIDInitial = Parameter.transactionIDInitial;
 		
 		for ( i=0; i<Parameter.threadSize; i++ )
 		{
-			PSSIServerRun sr = new PSSIServerRun( transactionIDInitial );
+			PSSIServerRun sr = new PSSIServerRun( transactionIDInitial, cdl );
 			Thread serverThread = new Thread(sr);
 			serverThread.start();
 			
-			transactionIDInitial += 1000;
+			transactionIDInitial += Parameter.transactionIDGap;
 		}
+
 	}
 
 }
+ 

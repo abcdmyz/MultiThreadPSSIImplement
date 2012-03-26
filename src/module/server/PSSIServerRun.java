@@ -2,7 +2,9 @@ package module.server;
 
 import java.sql.SQLException;
 import java.util.LinkedList;
+import java.util.concurrent.CountDownLatch;
 
+import module.PSSI.PSSIJudge;
 import module.PSSI.PSSILockManager;
 import module.PSSI.PSSITransaction;
 import module.PSSI.PSSITransactionManager;
@@ -16,11 +18,15 @@ import com.mchange.v2.c3p0.impl.NewProxyConnection;
 
 public class PSSIServerRun implements Runnable
 {
-	int transactionID;
+	long transactionID;
+	long initialID;
+	CountDownLatch cdl;
 	
-	public PSSIServerRun( int transactionID )
+	public PSSIServerRun( long transactionID , CountDownLatch cdl )
 	{
 		this.transactionID = transactionID;
+		this.initialID = transactionID;
+		this.cdl = cdl;
 	}
 	
 	public void run()
@@ -38,9 +44,14 @@ public class PSSIServerRun implements Runnable
 		for ( k=0; k<Parameter.transactionSize/Parameter.threadSize; k++ )
 		{
 			PSSITransactionManager.startTransaction(transactionID);
+			PSSIJudge.startTransaction(transactionID);
 		
 			selectRow = RandomRows.randomSelectRow(transactionID);
 			updateRow = RandomRows.randomUpdateRow(selectRow, transactionID);
+			
+			//updateRow = RandomRows.randomSelectRow(transactionID);
+			//selectRow = RandomRows.randomUpdateRow(updateRow, transactionID);
+			
 			
 			
 			NewProxyConnection connection = null;
@@ -73,8 +84,11 @@ public class PSSIServerRun implements Runnable
 			/**
 			 * For PSSI
 			 */
-			selectPosition = PSSILockManager.addSelectOperation(transactionID, selectRow);
-			PSSITransactionManager.addSelectOperation(transactionID, selectRow, selectPosition);
+			PSSILockManager.addSelectOperation(transactionID, selectRow);
+			PSSITransactionManager.addSelectOperation(transactionID, selectRow);
+			/**
+			 * For PSSI
+			 */
 			
 			
 			ExecuteAUpdate executeAUpdate = new ExecuteAUpdate();
@@ -101,7 +115,13 @@ public class PSSIServerRun implements Runnable
 			}
 			
 			transactionID++;
+			
+			if ( transactionID >= initialID + Parameter.transactionIDGap )
+				transactionID = initialID;
+			
 		}
+		
+		cdl.countDown();
 	}
 	
 }

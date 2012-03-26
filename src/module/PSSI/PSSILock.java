@@ -6,15 +6,13 @@ import java.util.Vector;
 public class PSSILock
 {
 	private int kSeq;
-	private Vector<Operation> operationList = new Vector<Operation>();
-	private int currentLocker;
-	private int lastLocker;
+	private Vector<PSSIOperation> operationList = new Vector<PSSIOperation>();
+	private long lastLocker;
 	
 	
 	public PSSILock()
 	{
 		operationList.clear();
-		setCurrentLocker(-1);
 		lastLocker = -1;
 	}	
 	
@@ -22,7 +20,6 @@ public class PSSILock
 	{
 		this.kSeq = kSeq;
 		operationList.clear();
-		setCurrentLocker(-1);
 		lastLocker = -1;
 	}
 
@@ -39,12 +36,12 @@ public class PSSILock
 	
 	
 	
-	public int addOperation( int transactionID, int kSeq, String RW )
-	{
-		Operation operation = new Operation(transactionID, kSeq, RW);
+	public void  addOperation( long transactionID, int kSeq, String RW )
+	{	
+		PSSIOperation operation = new PSSIOperation(transactionID, kSeq, RW);
 		operationList.add(operation);
 		
-		return operationList.size()-1;
+		//System.out.println("lock " + transactionID + " " + kSeq + " "  + operationList.size());
 	}
 	
 	
@@ -56,23 +53,15 @@ public class PSSILock
 			System.out.println("LOL " + operationList.get(i).getTransactionID() + " " + operationList.get(i).getkSeq() + " " + operationList.get(i).getRW() + " " + operationList.get(i).getRW());
 	}
 
-	public int getLastLocker()
+	public long getLastLocker()
 	{
 		return lastLocker;
 	}
 
-	public void setLastLocker(int lastLocker)
+	public void setLastLocker(long transactionID)
 	{
-		this.lastLocker = lastLocker;
+		this.lastLocker = transactionID;
 	}
 
-	public int getCurrentLocker()
-	{
-		return currentLocker;
-	}
 
-	public void setCurrentLocker(int currentLocker)
-	{
-		this.currentLocker = currentLocker;
-	}
 }

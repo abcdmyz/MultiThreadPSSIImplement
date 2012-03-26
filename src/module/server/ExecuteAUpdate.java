@@ -1,5 +1,10 @@
 package module.server;
 
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
+
+import module.PSSI.PSSIJudge;
 import module.PSSI.PSSILockManager;
 import module.PSSI.PSSITransactionManager;
 import module.SI.SILockManager;
@@ -13,40 +18,97 @@ import com.mysql.jdbc.Connection;
 public class ExecuteAUpdate
 {
 	private static int FUWAbort = 0;
+	private static int PSSIAbort = 0;
 	
-	public void execute( NewProxyConnection connection, int transactionID, int kSeq, int fraction ) throws InterruptedException
+	private static ReentrantLock commitLock = new ReentrantLock();
+	
+	public void execute( NewProxyConnection connection, long transactionID, int kSeq, int fraction ) throws InterruptedException
 	{
 		if ( getLock(transactionID, kSeq) )
 		{
 			excuteUpdate(connection, kSeq, fraction);
-			commitTransaction(connection, transactionID, kSeq);
+			
+			PSSILockManager.addUpdateOperation(transactionID, kSeq);
+			PSSITransactionManager.addUpdateOperation(transactionID, kSeq);
+			
+			if ( !PSSIDetect(transactionID) )
+			{
+				System.out.println("**********PSSI NO Cycle " +  transactionID + " Commit");
+				
+				if ( !commitLock.tryLock() )
+				{
+					commitLock.tryLock();
+				}
+				
+				commitTransaction(connection, transactionID, kSeq);
+				
+				
+			}
+			else
+			{
+				System.out.println("**********PSSI Has Cycle " +  transactionID + " Abort");
+				abortTransaction(connection, transactionID, kSeq);
+				addPSSIAbort();
+			}
+			
+			PSSIJudge.getDGTLock().unlock();
 		}
 		else
 		{
-			abortTransaction(connection, transactionID, kSeq);
-			FUWAbort++;
-		}
+			System.out.println("------------------First Updater Win " +  transactionID + " Abort");
 			
+			abortTransaction(connection, transactionID, kSeq);
+			addFUWAbort();
+		}
+		
+		
+		SILockManager.getLock(kSeq).unlock();	
 	}
 	
-	public synchronized boolean getLock( int transactionID, int kSeq ) throws InterruptedException
+	public boolean PSSIDetect( long transactionID )
 	{
+		if ( !PSSIJudge.getDGTLock().tryLock() )
+		{
+			PSSIJudge.getDGTLock().lock();
+		}
+			
+		return PSSIJudge.commitTransaction(transactionID);
+	}
+
+	
+	public boolean getLock( long transactionID, int kSeq ) throws InterruptedException
+	{
+		ReentrantReadWriteLock.ReadLock transReadLock = null;
+		
 		if ( !SILockManager.getLock(kSeq).tryLock() )
 		{
-			System.out.println("Transaction " + transactionID + " Waiting " + kSeq);
+			System.out.println("========Transaction " + transactionID  + " wait");
 			SILockManager.getLock(kSeq).lock();
 		    
-			if ( PSSITransactionManager.getTransactionState(PSSILockManager.getLastLocker(kSeq)) != null )
+			System.out.println("========Transaction " + transactionID + " last locker " + PSSILockManager.getLastLocker(kSeq) + " " + PSSITransactionManager.getTransactionState(PSSILockManager.getLastLocker(kSeq))  );
+			
+			transReadLock = PSSITransactionManager.getReadLock(PSSILockManager.getLastLocker(kSeq));
+			
+			if( !transReadLock.tryLock() )
 			{
-				System.out.println("Transaction " + transactionID + " WaitFail " + kSeq);
+				System.out.println("GetLock Wait to Read T_State" + PSSILockManager.getLastLocker(kSeq));
+				transReadLock.lock();
+			}
+			
+			System.out.println("GetLock get to Read T_State" + PSSILockManager.getLastLocker(kSeq));
+			
+			if ( PSSITransactionManager.getTransactionState(PSSILockManager.getLastLocker(kSeq)).equals("commit") )
+			{
+				transReadLock.unlock();
 				return false;
 			}
 			
-			return false;
+			transReadLock.unlock();
+			return true;
 		}
 		else
 		{
-			System.out.println("Transaction " + transactionID + " Lock " + kSeq);
+			System.out.println("=========Transactin " + transactionID + " get lock");
 			return true;
 		}
 	}
@@ -56,29 +118,85 @@ public class ExecuteAUpdate
 		DataOperation.updataARow(connection, kSeq, fraction);
 	}
 	
-	public synchronized void commitTransaction( NewProxyConnection connection, int transactionID, int kSeq )
+	public void commitTransaction( NewProxyConnection connection, long transactionID, int kSeq )
 	{
+		ReentrantReadWriteLock.WriteLock transWriteLock = null;
+		
+		transWriteLock = PSSITransactionManager.getWriteLock(transactionID);
+		
+		if( !transWriteLock.tryLock() )
+		{
+			System.out.println("commit Transaction Wait Write Lock " + transactionID);
+			transWriteLock.lock();
+		}
+		System.out.println("Commit Transaction get Write Lock " + transactionID);
+		
 		TransactionOperation.commitTransaction(connection);
 		
+		/**
+		 * For PSSI
+		 */
 		PSSILockManager.setLastLocker(kSeq, transactionID);
-		
 		PSSITransactionManager.commitTransaction(transactionID);
+		/**
+		 * For PSSI
+		 */
 		
-		System.out.println("Transaction " + transactionID + " Commit");
+		transWriteLock.unlock();
 		
-		SILockManager.getLock(kSeq).unlock();
+		//SILockManager.getLock(kSeq).unlock();
 	}
 	
-	public synchronized void abortTransaction( NewProxyConnection connection, int transactionID, int kSeq )
+	public  void abortTransaction( NewProxyConnection connection, long transactionID, int kSeq )
 	{
+		ReentrantReadWriteLock.WriteLock transWriteLock = null;
+		
+		transWriteLock = PSSITransactionManager.getWriteLock(transactionID);
+		
+		if( !transWriteLock.tryLock() )
+		{
+			System.out.println("Abort Transaction Wait Write Lock " + transactionID);
+			transWriteLock.lock();
+		}
+		
+		System.out.println("Abort Transaction Get Write Lock " + transactionID);
+		
 		TransactionOperation.abortTransaction(connection);
 		
+		/**
+		 * For PSSI
+		 */
 		PSSILockManager.setLastLocker(kSeq, transactionID);
-	
+		
 		PSSITransactionManager.abortTransaction(transactionID);
+		PSSILockManager.abortTransaction(transactionID);
 		
-		System.out.println("Transaction " + transactionID + " abort");
+		/**
+		 * For PSSI
+		 */
 		
-		SILockManager.getLock(kSeq).unlock();
+		transWriteLock.unlock();
+		
+		//SILockManager.getLock(kSeq).unlock();
+	}
+
+	public synchronized void addFUWAbort()
+	{
+		FUWAbort++;
+	}
+	
+	public static int getFUWAbort()
+	{
+		return FUWAbort;
+	}
+	
+	public synchronized void addPSSIAbort()
+	{
+		PSSIAbort++;
+	}
+	
+	public static int getPSSIAbort()
+	{
+		return PSSIAbort;
 	}
 }

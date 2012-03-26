@@ -8,6 +8,8 @@ import java.util.ListIterator;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.swing.text.html.HTMLDocument.Iterator;
+
 import module.server.HotSpot;
 import module.setting.Parameter;
 
@@ -31,29 +33,22 @@ public class PSSILockManager
 		}
 	}
 	
-	public static int addOperation( int transactionID, int kSeq, String rw )
+	public static void  addUpdateOperation( long transactionID, int kSeq )
 	{
 		PSSILock lock = lockTable.get(kSeq);
 		
-		int count = lock.addOperation(transactionID, kSeq, rw);
-		
-		return count;
-	}
-	
-	public static void addLock( int kSeq )
-	{
-		
+		lock.addOperation(transactionID, kSeq, "w");
 	}
 	
 
-	public static void removeLock( int transactionID )
+	public static void abortTransaction( long transactionID )
 	{
 		PSSITransaction transaction = PSSITransactionManager.getTransaction(transactionID);
 		PSSILock lock = new PSSILock();
-		Vector<Operation> transactionOperationList = transaction.getOperationList();
-		Vector<Operation> lockOperationList = transaction.getOperationList();
+		Vector<PSSIOperation> transactionOperationList = transaction.getOperationList();
+		Vector<PSSIOperation> lockOperationList = transaction.getOperationList();
 		int kSeq;
-		Operation operation = new Operation();
+		PSSIOperation operation = new PSSIOperation();
 		
 		for ( int i=0; i<transactionOperationList.size(); i++ )
 		{
@@ -62,14 +57,28 @@ public class PSSILockManager
 			lock = lockTable.get(kSeq);
 			lockOperationList = lock.getOperationList();
 			
-			ListIterator<Operation> iter = (ListIterator<Operation>) lockOperationList.iterator();
+			java.util.Iterator<PSSIOperation> iter = lockOperationList.iterator();
 			 
+			/*
 			while ( iter.hasNext() )
 			{
-				operation = (Operation) iter.next();
+				operation = iter.next();
 				
 				if ( operation.getTransactionID() == transactionID )
-					iter.remove();	
+				{
+					System.out.println("~~~~~remove " + operation.getTransactionID() + " " + operation.getkSeq() );
+					iter.remove();
+				}
+			}
+			*/
+			
+			for ( int j=0; j<lockOperationList.size(); j++ )
+			{
+				if ( lockOperationList.get(j).getTransactionID() == transactionID )
+				{
+					System.out.println("~~~~~remove " +  lockOperationList.get(j).getTransactionID() + " " +  lockOperationList.get(j).getkSeq() );
+					lockOperationList.remove(j);
+				}
 			}
 			
 		}
@@ -80,9 +89,9 @@ public class PSSILockManager
 		return lockTable.get(kSeq);
 	}
 	
-	public static int[] addSelectOperation( int transactionID, int[] selectRow )
+	public static void addSelectOperation( long transactionID, int[] selectRow )
 	{
-		int[] position = new int[Parameter.selectSize];
+	
 		int i;
 		PSSILock lock = new PSSILock();
 		
@@ -90,31 +99,20 @@ public class PSSILockManager
 		{
 			lock = lockTable.get(selectRow[i]);
 			
-			position[i] = lock.addOperation(transactionID, selectRow[i], "R");
+			lock.addOperation(transactionID, selectRow[i], "r");
 			
 			//lock.printOperationList();
 			
 		}
-		
-		return position;
 	}
 	
-	public static int getCurrentLocker( int kSeq )
-	{
-		return lockTable.get(kSeq).getCurrentLocker();
-	}
 	
-	public static void setCurrentLocker( int kSeq, int transactionID )
-	{
-		lockTable.get(kSeq).setCurrentLocker(transactionID);
-	}
-	
-	public static int getLastLocker( int kSeq )
+	public static long getLastLocker( int kSeq )
 	{
 		return lockTable.get(kSeq).getLastLocker();
 	}
 	
-	public static void setLastLocker( int kSeq, int transactionID )
+	public static void setLastLocker( int kSeq, long transactionID )
 	{
 		lockTable.get(kSeq).setLastLocker(transactionID);
 	}

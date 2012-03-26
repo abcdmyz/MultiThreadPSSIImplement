@@ -10,7 +10,7 @@ import com.mchange.v2.c3p0.impl.NewProxyConnection;
 
 public class RandomRows
 {
-	public static int[] randomSelectRow( int threadID )
+	public static int[] randomSelectRow( long transactionID  )
 	{
 		long temp;
 		int index = 0, i, j;
@@ -44,7 +44,7 @@ public class RandomRows
 			
 			selectRow[i] = HotSpot.getHotspotData(index);
 			
-			//System.out.println("Transaction " + threadID + " select " + index + " ");
+			System.out.println("Transaction " + transactionID + " select " + index + " " + HotSpot.getHotspotData(index));
 			
 			selectSet.add(index);
 		}
@@ -52,7 +52,7 @@ public class RandomRows
 		return selectRow;
 	}
 	
-	public static int[] randomUpdateRow( int[] selectRow, int threadID )
+	public static int[] randomUpdateRow( int[] selectRow, long transactionID )
 	{
 		long temp;
 		int index = 0, i, j;
@@ -91,7 +91,7 @@ public class RandomRows
 			
 			updateRow[i] = HotSpot.getHotspotData(index);
 			
-			System.out.println("Transaction " + threadID + " update " + index + " ");
+			System.out.println("Transaction " + transactionID + " update " + index + " " + HotSpot.getHotspotData(index));
 			
 			updateSet.add(index);
 		}
