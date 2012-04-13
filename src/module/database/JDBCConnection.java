@@ -2,8 +2,11 @@ package module.database;
 
 import java.beans.PropertyVetoException;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Hashtable;
+
+import module.setting.Parameter;
 
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import com.mchange.v2.c3p0.DataSources;
@@ -18,9 +21,13 @@ public class JDBCConnection
 	
 	static ComboPooledDataSource cpds;
 	
+	static private int connectionCount;
+	
 	public static void initial() throws SQLException
 	{
-		buildPooledDataSource();
+		//buildPooledDataSource();
+		
+		connectionCount = 0;
 	}
 	
 	public static void buildPooledDataSource()
@@ -40,7 +47,7 @@ public class JDBCConnection
 		cpds.setUser(mysql_user);                                  
 		cpds.setPassword(mysql_password);     
 		
-		cpds.setMaxStatements( 100 );	
+		cpds.setMaxStatements(10000);	
 	}
 	
 	public static void destroyPooledDataSource() throws SQLException
@@ -54,6 +61,8 @@ public class JDBCConnection
 	{
 		Connection connection;
 
+		connectionCount++;
+		
 		connection = cpds.getConnection();
 		
 		return connection;
@@ -62,5 +71,29 @@ public class JDBCConnection
 	public static void closeConnection( Connection connection ) throws SQLException 
 	{
 		connection.close();
+	}
+	
+	public static Connection getCommonConnection() throws ClassNotFoundException
+	{
+		Connection conn = null;
+		
+		connectionCount++;
+		
+		try 
+		{
+			Class.forName(jdbc_driver);
+			conn = DriverManager.getConnection(mysql_url, mysql_user, mysql_password);
+		}
+		catch( SQLException e )
+		{
+			e.printStackTrace();
+		}
+		
+		return conn;
+	}
+	
+	public static int getConnectionCount()
+	{
+		return connectionCount;
 	}
 }

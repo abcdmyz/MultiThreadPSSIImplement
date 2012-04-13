@@ -15,14 +15,15 @@ import module.database.TransactionOperation;
 import com.mchange.v2.c3p0.impl.NewProxyConnection;
 import com.mysql.jdbc.Connection;
 
-public class ExecuteAUpdate
+public class ExecuteAPSSIUpdate
 {
 	private static int FUWAbort = 0;
 	private static int PSSIAbort = 0;
+	private static int committedTransaction = 0;
 	
 	private static ReentrantLock commitLock = new ReentrantLock();
 	
-	public void execute( NewProxyConnection connection, long transactionID, int kSeq, int fraction ) throws InterruptedException
+	public void execute( Connection connection, long transactionID, int kSeq, int fraction ) throws InterruptedException
 	{
 		if ( getLock(transactionID, kSeq) )
 		{
@@ -33,7 +34,7 @@ public class ExecuteAUpdate
 			
 			if ( !PSSIDetect(transactionID) )
 			{
-				System.out.println("**********PSSI NO Cycle " +  transactionID + " Commit");
+				//System.out.println("**********PSSI NO Cycle " +  transactionID + " Commit");
 				
 				if ( !commitLock.tryLock() )
 				{
@@ -46,7 +47,7 @@ public class ExecuteAUpdate
 			}
 			else
 			{
-				System.out.println("**********PSSI Has Cycle " +  transactionID + " Abort");
+				//System.out.println("**********PSSI Has Cycle " +  transactionID + " Abort");
 				abortTransaction(connection, transactionID, kSeq);
 				addPSSIAbort();
 			}
@@ -55,7 +56,7 @@ public class ExecuteAUpdate
 		}
 		else
 		{
-			System.out.println("------------------First Updater Win " +  transactionID + " Abort");
+			//System.out.println("------------------First Updater Win " +  transactionID + " Abort");
 			
 			abortTransaction(connection, transactionID, kSeq);
 			addFUWAbort();
@@ -82,20 +83,20 @@ public class ExecuteAUpdate
 		
 		if ( !SILockManager.getLock(kSeq).tryLock() )
 		{
-			System.out.println("========Transaction " + transactionID  + " wait");
+			//System.out.println("========Transaction " + transactionID  + " wait");
 			SILockManager.getLock(kSeq).lock();
 		    
-			System.out.println("========Transaction " + transactionID + " last locker " + PSSILockManager.getLastLocker(kSeq) + " " + PSSITransactionManager.getTransactionState(PSSILockManager.getLastLocker(kSeq))  );
+			//System.out.println("========Transaction " + transactionID + " last locker " + PSSILockManager.getLastLocker(kSeq) + " " + PSSITransactionManager.getTransactionState(PSSILockManager.getLastLocker(kSeq))  );
 			
 			transReadLock = PSSITransactionManager.getReadLock(PSSILockManager.getLastLocker(kSeq));
 			
 			if( !transReadLock.tryLock() )
 			{
-				System.out.println("GetLock Wait to Read T_State" + PSSILockManager.getLastLocker(kSeq));
+				//System.out.println("GetLock Wait to Read T_State" + PSSILockManager.getLastLocker(kSeq));
 				transReadLock.lock();
 			}
 			
-			System.out.println("GetLock get to Read T_State" + PSSILockManager.getLastLocker(kSeq));
+			//System.out.println("GetLock get to Read T_State" + PSSILockManager.getLastLocker(kSeq));
 			
 			if ( PSSITransactionManager.getTransactionState(PSSILockManager.getLastLocker(kSeq)).equals("commit") )
 			{
@@ -108,17 +109,17 @@ public class ExecuteAUpdate
 		}
 		else
 		{
-			System.out.println("=========Transactin " + transactionID + " get lock");
+			//System.out.println("=========Transactin " + transactionID + " get lock");
 			return true;
 		}
 	}
 	
-	public void excuteUpdate( NewProxyConnection connection, int kSeq, int fraction )
+	public void excuteUpdate( Connection connection, int kSeq, int fraction )
 	{
-		DataOperation.updataARow(connection, kSeq, fraction);
+		//DataOperation.updataARow(connection, kSeq, fraction);
 	}
 	
-	public void commitTransaction( NewProxyConnection connection, long transactionID, int kSeq )
+	public void commitTransaction( Connection connection, long transactionID, int kSeq )
 	{
 		ReentrantReadWriteLock.WriteLock transWriteLock = null;
 		
@@ -126,10 +127,10 @@ public class ExecuteAUpdate
 		
 		if( !transWriteLock.tryLock() )
 		{
-			System.out.println("commit Transaction Wait Write Lock " + transactionID);
+			//System.out.println("commit Transaction Wait Write Lock " + transactionID);
 			transWriteLock.lock();
 		}
-		System.out.println("Commit Transaction get Write Lock " + transactionID);
+		//System.out.println("Commit Transaction get Write Lock " + transactionID);
 		
 		TransactionOperation.commitTransaction(connection);
 		
@@ -144,10 +145,12 @@ public class ExecuteAUpdate
 		
 		transWriteLock.unlock();
 		
+		addCommittedTransactionCount();
+		
 		//SILockManager.getLock(kSeq).unlock();
 	}
 	
-	public  void abortTransaction( NewProxyConnection connection, long transactionID, int kSeq )
+	public  void abortTransaction( Connection connection, long transactionID, int kSeq )
 	{
 		ReentrantReadWriteLock.WriteLock transWriteLock = null;
 		
@@ -155,11 +158,11 @@ public class ExecuteAUpdate
 		
 		if( !transWriteLock.tryLock() )
 		{
-			System.out.println("Abort Transaction Wait Write Lock " + transactionID);
+			//System.out.println("Abort Transaction Wait Write Lock " + transactionID);
 			transWriteLock.lock();
 		}
 		
-		System.out.println("Abort Transaction Get Write Lock " + transactionID);
+		//System.out.println("Abort Transaction Get Write Lock " + transactionID);
 		
 		TransactionOperation.abortTransaction(connection);
 		
@@ -198,5 +201,15 @@ public class ExecuteAUpdate
 	public static int getPSSIAbort()
 	{
 		return PSSIAbort;
+	}
+	
+	public static void addCommittedTransactionCount()
+	{
+		committedTransaction++;
+	}
+	
+	public static int getCommittedTransactionCount()
+	{
+		return committedTransaction;
 	}
 }

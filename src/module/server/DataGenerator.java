@@ -9,32 +9,34 @@ import com.mchange.v2.c3p0.impl.NewProxyConnection;
 import module.database.JDBCConnection;
 import module.setting.Parameter;
 
-public class HotSpot
+public class DataGenerator
 {
 	private static int[] hotspotData = new int[Parameter.hotspotSize+50];
 	
-	public static void generateHotspotData() 
+	public static int generateKseq() 
 	{
 		int i;
 		long temp;
-		int kseq;
+		int rate, kseq;
 		
 		java.util.Random random =new java.util.Random();
 		
-		for ( i=0; i<Parameter.hotspotSize; i++ )
+		
+		temp = random.nextLong();
+		rate = (int) Math.abs( temp % 100 );
+			
+		if ( rate < Parameter.hotspotAccessRate )
 		{
 			temp = random.nextLong();
-			kseq = (int) Math.abs( temp % Parameter.dataSetSize );
-			
-			//System.out.println(kseq);
-			
-			hotspotData[i] = kseq;
+			kseq = (int) Math.abs( temp % Parameter.hotspotSize );
 		}
-	}
-	
-	public static int getHotspotData( int i )
-	{
-		return hotspotData[i];
+		else
+		{
+			temp = random.nextLong();
+			kseq = (int) Math.abs( temp % ( Parameter.dataSetSize - Parameter.hotspotSize)) + Parameter.hotspotSize;
+		}
+		
+		return kseq;	
 	}
 }
 

@@ -9,7 +9,7 @@ import com.mysql.jdbc.Connection;
 
 public class DataOperation
 {
-	public static int selectData( NewProxyConnection connection, int[] kseqSet )
+	public static int selectData( Connection connection, int[] kseqSet )
 	{
 		int average = 0;
 		int kseq, kval;
@@ -46,7 +46,7 @@ public class DataOperation
 		return average/kseqSet.length;
 	}
 	
-	public static void updataData( NewProxyConnection connection, int[] kseqSet, double fraction )
+	public static void updataData( Connection connection, int[] kseqSet, double fraction )
 	{
 		PreparedStatement pstmt;
 		
@@ -72,7 +72,7 @@ public class DataOperation
 		}
 	}
 	
-	public static void updataARow( NewProxyConnection connection, int kseq, double fraction )
+	public static void updataARow( Connection connection, int kseq, double fraction )
 	{
 		PreparedStatement pstmt;
 		
@@ -92,5 +92,38 @@ public class DataOperation
 		{
 			System.err.println(ex.getMessage());
 		}
+	}
+	
+	public static int selectARow( Connection connection, int kseq)
+	{
+		PreparedStatement pstmt;
+		ResultSet resultset;	
+		int kval = 0;
+		
+		try
+		{	
+			pstmt = connection.prepareStatement ("SELECT kval FROM bench WHERE kseq = ? ;");
+		
+			pstmt.setInt(1, kseq);
+			resultset = pstmt.executeQuery();
+			
+			if ( resultset.next() )
+			{
+				kval = resultset.getInt("kval");
+			}
+			
+			pstmt.close();
+			
+			
+		}
+		
+		
+		
+		catch (SQLException ex)
+		{
+			System.err.println(ex.getMessage());
+		}
+		
+		return kval;
 	}
 }

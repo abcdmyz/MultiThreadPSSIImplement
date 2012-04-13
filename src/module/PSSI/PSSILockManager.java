@@ -33,6 +33,11 @@ public class PSSILockManager
 		}
 	}
 	
+	public static boolean checkKey( int key )
+	{
+		return  lockTable.containsKey(key);
+	}
+	
 	public static void  addUpdateOperation( long transactionID, int kSeq )
 	{
 		PSSILock lock = lockTable.get(kSeq);
@@ -76,7 +81,7 @@ public class PSSILockManager
 			{
 				if ( lockOperationList.get(j).getTransactionID() == transactionID )
 				{
-					System.out.println("~~~~~remove " +  lockOperationList.get(j).getTransactionID() + " " +  lockOperationList.get(j).getkSeq() );
+					//System.out.println("~~~~~remove " +  lockOperationList.get(j).getTransactionID() + " " +  lockOperationList.get(j).getkSeq() );
 					lockOperationList.remove(j);
 				}
 			}

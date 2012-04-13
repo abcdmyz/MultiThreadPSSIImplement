@@ -4,8 +4,8 @@ import java.util.ListIterator;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import module.server.HotSpot;
 import module.setting.Parameter;
 
 public class SILockManager
@@ -14,6 +14,7 @@ public class SILockManager
 	
 	public static void initial()
 	{
+		/*
 		lockTable.clear();
 		
 		int i;
@@ -24,10 +25,21 @@ public class SILockManager
 			ReentrantLock lock = new ReentrantLock();		
 			lockTable.put(kSeq, lock);
 		}
+		*/
 	}	
+	
+	public static void checkLockExist( int kSeq )
+	{
+		if ( lockTable.get(kSeq) == null )
+		{
+			ReentrantLock lock = new ReentrantLock();		
+			lockTable.put(kSeq, lock);
+		}
+	}
 
 	public static ReentrantLock getLock( int kSeq )
 	{
+		checkLockExist(kSeq);
 		return lockTable.get(kSeq);
 	}
 }

@@ -10,10 +10,10 @@ import com.mchange.v2.c3p0.impl.NewProxyConnection;
 
 public class RandomRows
 {
-	public static int[] randomSelectRow( long transactionID  )
+	public static int[] randomSelectRows( long transactionID  )
 	{
 		long temp;
-		int index = 0, i, j;
+		int kseq = 0, i, j;
 		int[] selectRow = new int[Parameter.selectSize];
 		boolean diff;
 		
@@ -25,7 +25,6 @@ public class RandomRows
 		selectSet.clear();
 		
 		
-		
 		for ( i=0; i<Parameter.selectSize; i++ )
 		{
 			diff = false;
@@ -34,68 +33,57 @@ public class RandomRows
 			{
 				temp = random.nextLong();
 				
-				index = (int) Math.abs( temp % Parameter.hotspotSize );
+				kseq = DataGenerator.generateKseq();
 				
 				//System.out.println("index " + index); 
 			
-				if ( !selectSet.contains(index) )
+				if ( !selectSet.contains(kseq) )
 					diff = true;
 			}
 			
-			selectRow[i] = HotSpot.getHotspotData(index);
+			selectRow[i] = kseq;
 			
-			System.out.println("Transaction " + transactionID + " select " + index + " " + HotSpot.getHotspotData(index));
+			//System.out.println("Transaction " + transactionID + " select " + index + " " + HotSpot.getHotspotData(index));
 			
-			selectSet.add(index);
+			selectSet.add(kseq);
 		}
 		
 		return selectRow;
 	}
 	
-	public static int[] randomUpdateRow( int[] selectRow, long transactionID )
+	public static int randomAUpdateRow( int[] selectRow, long transactionID )
 	{
 		long temp;
-		int index = 0, i, j;
-		int[] updateRow = new int[Parameter.updateSize];
+		int kseq = 0, i, j;
+		int updateRow = 0;
 		HashSet<Integer> selectSet = new HashSet<Integer>();
-		HashSet<Integer> updateSet = new HashSet<Integer>();
+
 		boolean diff;
 
 		java.util.Random random =new java.util.Random();
 		
 		selectSet.clear();
-		updateSet.clear();
 		
 		for ( i=0; i<Parameter.selectSize; i++ )
 			selectSet.add(selectRow[i]);
 		
-		
-		
-		for ( i=0; i<Parameter.updateSize; i++ )
-		{
-			diff = false;
+		diff = false;
 			
-			while ( !diff )
-			{
-				temp = random.nextLong();
+		while ( !diff )
+		{
+			temp = random.nextLong();
 				
-				index = (int) Math.abs( temp % Parameter.hotspotSize );
+			kseq = DataGenerator.generateKseq();
 				
 				//System.out.println("index " + index); 
 			
-				if ( !selectSet.contains(HotSpot.getHotspotData(index)) && !updateSet.contains(index) )
-					diff = true;
-			}
-			
-			
-			
-			updateRow[i] = HotSpot.getHotspotData(index);
-			
-			System.out.println("Transaction " + transactionID + " update " + index + " " + HotSpot.getHotspotData(index));
-			
-			updateSet.add(index);
+			if ( !selectSet.contains(kseq)  )
+				diff = true;
 		}
-		
+	
+		updateRow = kseq;
+			
+			//System.out.println("Transaction " + transactionID + " update " + index + " " + HotSpot.getHotspotData(index));
 		
 		return updateRow;
 	}

@@ -1,13 +1,10 @@
 package module.server;
 
 import java.sql.SQLException;
-import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
 
-import module.PSSI.PSSIJudge;
-import module.PSSI.PSSILockManager;
-import module.PSSI.PSSITransaction;
-import module.PSSI.PSSITransactionManager;
+import module.TwoPL.TwoPLTransaction;
+import module.TwoPL.TwoPLTransactionManager;
 import module.database.DataOperation;
 import module.database.JDBCConnection;
 import module.database.TransactionOperation;
@@ -16,14 +13,13 @@ import module.setting.Parameter;
 import com.mchange.v2.c3p0.impl.NewProxyConnection;
 import com.mysql.jdbc.Connection;
 
-
-public class PSSIServerRun implements Runnable
+public class TwoPLServerRun implements Runnable
 {
 	long transactionID;
 	long initialID;
 	CountDownLatch cdl;
 	
-	public PSSIServerRun( long transactionID , CountDownLatch cdl )
+	public TwoPLServerRun( long transactionID , CountDownLatch cdl )
 	{
 		this.transactionID = transactionID;
 		this.initialID = transactionID;
@@ -36,13 +32,15 @@ public class PSSIServerRun implements Runnable
 		
 		//System.out.println("run");
 		
+		
 		int[] selectRow = new int[Parameter.selectSize];
 		int updateRow;
 		int[] selectPosition = new int[Parameter.selectSize];
 		int average, i, j, k, fraction;
-		PSSITransaction transaction = new PSSITransaction();
 		
+		TwoPLTransaction transaction = new TwoPLTransaction();
 		
+		//NewProxyConnection connection = null;
 		Connection connection = null;
 		try
 		{
@@ -62,42 +60,34 @@ public class PSSIServerRun implements Runnable
 			e.printStackTrace();
 		}
 		
+		
 		for ( k=0; k<Parameter.transactionPeerThread; k++ )
 		{
-			PSSITransactionManager.startTransaction(transactionID);
-			PSSIJudge.startTransaction(transactionID);
+			
+			TwoPLTransactionManager.startTransaction(transactionID);
 		
 			selectRow = RandomRows.randomSelectRows(transactionID);
 			updateRow = RandomRows.randomAUpdateRow(selectRow, transactionID);
 			
-			//updateRow = RandomRows.randomSelectRow(transactionID);
-			//selectRow = RandomRows.randomUpdateRow(updateRow, transactionID);
-				
 			TransactionOperation.startTransaction(connection);
 			
-			average = DataOperation.selectData(connection, selectRow);
-			fraction = (int) (average*0.001); 
 			
-			/**
-			 * For PSSI
-			 */
-			PSSILockManager.addSelectOperation(transactionID, selectRow);
-			PSSITransactionManager.addSelectOperation(transactionID, selectRow);
-			/**
-			 * For PSSI
-			 */
+			ExecuteTwoPL executeTPL = new ExecuteTwoPL();
 			
-			
-			ExecuteAPSSIUpdate executeAUpdate = new ExecuteAPSSIUpdate();
 			try
 			{
-				executeAUpdate.execute(connection, transactionID, updateRow, fraction );
+				
+				while ( !executeTPL.execute(connection, transactionID, selectRow, updateRow ) );
+				{
+					//TransactionOperation.abortTransaction(connection);
+				}
 			}
 			catch ( InterruptedException e1 )
 			{
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
-			}
+			}	
+			
 			
 			
 			transactionID++;
@@ -105,7 +95,9 @@ public class PSSIServerRun implements Runnable
 			if ( transactionID >= initialID + Parameter.transactionIDGap )
 				transactionID = initialID;
 			
+			
 		}
+		
 		
 		try
 		{
@@ -119,5 +111,6 @@ public class PSSIServerRun implements Runnable
 		
 		cdl.countDown();
 	}
+	
 	
 }

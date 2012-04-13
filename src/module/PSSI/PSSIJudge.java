@@ -19,9 +19,17 @@ public class PSSIJudge
 	private static LinkedList<Edge> mayAbortEdge = new LinkedList();
 	
 	
+	private static ConcurrentHashMap<Long, LinkedList<Long>> DGTV = new ConcurrentHashMap<Long, LinkedList<Long>>();
+	
+	
 	public static void initial()
 	{		
 		DGT.clear();
+		
+		/**
+		 * DGTV
+		 */
+		DGTV.clear();
 	}
 	
 	
@@ -35,14 +43,30 @@ public class PSSIJudge
 		LinkedList<Long> nodeList = new LinkedList<Long>();
 		nodeList.clear();
 		DGT.put(tID, nodeList);
+		
+		/**
+		 * DGTV
+		 */
+		LinkedList<Long> nodeList2 = new LinkedList<Long>();
+		nodeList2.clear();
+		DGTV.put(tID, nodeList2);
 	}
 	
 	public static void addEdge( long tID, long ttID )
 	{	
 		if ( !DGT.get(tID).contains(ttID) )
 		{
-			System.out.println("add edge " + tID + " " + ttID);
+			//System.out.println("add edge " + tID + " " + ttID);
 			DGT.get(tID).add(ttID);
+		}
+		
+		/**
+		 * DGTV
+		 */
+		if ( !DGTV.get(ttID).contains(tID) )
+		{
+			//System.out.println("add edge " + tID + " " + ttID);
+			DGTV.get(ttID).add(tID);
 		}
 	}
 	
@@ -54,14 +78,17 @@ public class PSSIJudge
 	
 	public static void removeTransaction( long transactionID )
 	{
+		/*
 		for ( int i=0; i<mayAbortEdge.size(); i++ )
 		{
 			if ( mayAbortEdge.get(i).getNodeB() == transactionID )
 			{
 				DGT.get(mayAbortEdge.get(i).getNodeA()).remove(mayAbortEdge.get(i).getNodeB());
 			}
-			System.out.println("PSSI Remove Edge 2 " + mayAbortEdge.get(i).getNodeA() + " " + mayAbortEdge.get(i).getNodeB());
+			//System.out.println("PSSI Remove Edge 2 " + mayAbortEdge.get(i).getNodeA() + " " + mayAbortEdge.get(i).getNodeB());
 		}
+		*/
+		
 		
 		DGT.remove(transactionID);
 	}
@@ -81,18 +108,18 @@ public class PSSIJudge
 		
 		mayAbortEdge.clear();
 		
-		System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA   " + tID);
+		//System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA   " + tID);
 		
 		transReadTLock = PSSITransactionManager.getWriteLock(tID);
 		
 		
 		if( !transReadTLock.tryLock() )
 		{
-			System.out.println("PSSI Wait Current Read Transaction" + tID);
+			//System.out.println("PSSI Wait Current Read Transaction" + tID);
 			transReadTLock.lock();
 		}
 		
-		System.out.println("PSSI get Current Read Transaction" + tID);
+		//System.out.println("PSSI get Current Read Transaction" + tID);
 		
 		for ( int i=0; i<transactionList.size(); i++ )
 		{
@@ -125,33 +152,33 @@ public class PSSIJudge
 				
 				if( !transReadCTLock.tryLock() )
 				{
-					System.out.println("PSSI Wait Commit Read Transaction" + commitTID);
+					//System.out.println("PSSI Wait Commit Read Transaction" + commitTID);
 					transReadCTLock.lock();
 				}
 				
-				System.out.println("PSSI get Commit Read Transaction" + commitTID);
+				//System.out.println("PSSI get Commit Read Transaction" + commitTID);
 				
 				if ( PSSITransactionManager.checkAbortTransaction(commitTID) )
 				{
-					System.out.println(commitTID + " abort");
-					System.out.println("PSSI Release Commit Transaction" + commitTID);
+					//System.out.println(commitTID + " abort");
+					//System.out.println("PSSI Release Commit Transaction" + commitTID);
 					transReadCTLock.unlock();
 					continue;
 				}
 				
 				if ( !PSSITransactionManager.checkCommitTransaction(commitTID) )
 				{
-					System.out.println(commitTID + " not commit");
-					System.out.println("PSSI Release Commit Transaction" + commitTID);
+					//System.out.println(commitTID + " not commit");
+					//System.out.println("PSSI Release Commit Transaction" + commitTID);
 					transReadCTLock.unlock();
 					continue;
 				}
 				
 				
 				
-				System.out.println(transactionList.get(i).getTransactionID() + " " + transactionList.get(i).getRW() + " " + lockList.get(j).getTransactionID()+ " " + lockList.get(j).getRW());
+				//System.out.println(transactionList.get(i).getTransactionID() + " " + transactionList.get(i).getRW() + " " + lockList.get(j).getTransactionID()+ " " + lockList.get(j).getRW());
 				
-				//( transactionList.get(i).getRW().equals("w") || lockList.get(j).getRW().equals("w") )
+				
 				
 				if ( PSSITransactionManager.getTransactionEndTime(commitTID) >PSSITransactionManager.getTransactionStartTime(tID) )
 				{
@@ -176,13 +203,13 @@ public class PSSIJudge
 					}
 				}
 				
-				System.out.println("PSSI Release Commit Transaction" + commitTID);
+				//System.out.println("PSSI Release Commit Transaction" + commitTID);
 				transReadCTLock.unlock();
 			}
 				
 		}
 		
-		System.out.println("PSSI Release Current Transaction" + tID);
+		//System.out.println("PSSI Release Current Transaction" + tID);
 		transReadTLock.unlock();
 		
 		mark.clear();
@@ -201,7 +228,7 @@ public class PSSIJudge
 		mark.add(tID);
 		long temp;
 		
-		System.out.println("tid size " + tID + " " + DGT.get(tID).size());
+		//System.out.println("tid size " + tID + " " + DGT.get(tID).size());
 		
 		for ( int i=0; i<DGT.get(tID).size(); i++ )
 		{

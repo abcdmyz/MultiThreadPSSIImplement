@@ -91,10 +91,10 @@ public class PSSITransactionManager
 		return null;
 	}
 	
-	public static void setTransactionState( int transactionID )
+	public static void setTransactionState( int transactionID, String transactionState )
 	{
 		if ( transactionTable.get(transactionID) != null )
-			transactionTable.get(transactionID).setTransactionState("commit");
+			transactionTable.get(transactionID).setTransactionState(transactionState);
 	}
 	
 	public static long getTransactionStartTime( long tID )
