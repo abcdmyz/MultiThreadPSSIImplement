@@ -16,9 +16,9 @@ public class ClientRequest
 		
 		for ( i=0; i<Parameter.threadSize; i++ )
 		{
-			//PSSIServerRun sr = new PSSIServerRun( transactionIDInitial, cdl );
+			PSSIServerRun sr = new PSSIServerRun( transactionIDInitial, cdl );
 			
-			TwoPLServerRun sr = new TwoPLServerRun( transactionIDInitial, cdl );
+			//TwoPLServerRun sr = new TwoPLServerRun( transactionIDInitial, cdl );
 			
 			Thread serverThread = new Thread(sr);
 			serverThread.start();

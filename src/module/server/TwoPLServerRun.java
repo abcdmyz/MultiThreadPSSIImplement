@@ -61,13 +61,15 @@ public class TwoPLServerRun implements Runnable
 		}
 		
 		
-		for ( k=0; k<Parameter.transactionPeerThread; k++ )
+		for ( k=0; k<Parameter.transactionPerThread; k++ )
 		{
 			
 			TwoPLTransactionManager.startTransaction(transactionID);
 		
 			selectRow = RandomRows.randomSelectRows(transactionID);
 			updateRow = RandomRows.randomAUpdateRow(selectRow, transactionID);
+			
+			
 			
 			TransactionOperation.startTransaction(connection);
 			

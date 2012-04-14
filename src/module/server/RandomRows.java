@@ -43,7 +43,7 @@ public class RandomRows
 			
 			selectRow[i] = kseq;
 			
-			//System.out.println("Transaction " + transactionID + " select " + index + " " + HotSpot.getHotspotData(index));
+			//System.out.println("Transaction " + transactionID + " select " + kseq);
 			
 			selectSet.add(kseq);
 		}
@@ -83,7 +83,7 @@ public class RandomRows
 	
 		updateRow = kseq;
 			
-			//System.out.println("Transaction " + transactionID + " update " + index + " " + HotSpot.getHotspotData(index));
+		//System.out.println("Transaction " + transactionID + " update " + kseq);
 		
 		return updateRow;
 	}

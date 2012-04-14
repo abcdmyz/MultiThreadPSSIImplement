@@ -16,10 +16,8 @@ public class PSSIJudge
 	private static HashSet<Long> mark = new HashSet<Long>(); 
 	private static ConcurrentHashMap<Long, LinkedList<Long>> DGT = new ConcurrentHashMap<Long, LinkedList<Long>>();
 	private static ReentrantLock DGTLock = new ReentrantLock();
-	private static LinkedList<Edge> mayAbortEdge = new LinkedList();
-	
-	
-	private static ConcurrentHashMap<Long, LinkedList<Long>> DGTV = new ConcurrentHashMap<Long, LinkedList<Long>>();
+		
+	private static ConcurrentHashMap<Long, LinkedList<Long>> DGTRV = new ConcurrentHashMap<Long, LinkedList<Long>>();
 	
 	
 	public static void initial()
@@ -29,7 +27,7 @@ public class PSSIJudge
 		/**
 		 * DGTV
 		 */
-		DGTV.clear();
+		DGTRV.clear();
 	}
 	
 	
@@ -49,7 +47,7 @@ public class PSSIJudge
 		 */
 		LinkedList<Long> nodeList2 = new LinkedList<Long>();
 		nodeList2.clear();
-		DGTV.put(tID, nodeList2);
+		DGTRV.put(tID, nodeList2);
 	}
 	
 	public static void addEdge( long tID, long ttID )
@@ -63,39 +61,43 @@ public class PSSIJudge
 		/**
 		 * DGTV
 		 */
-		if ( !DGTV.get(ttID).contains(tID) )
+		if ( !DGTRV.get(ttID).contains(tID) )
 		{
 			//System.out.println("add edge " + tID + " " + ttID);
-			DGTV.get(ttID).add(tID);
+			DGTRV.get(ttID).add(tID);
 		}
 	}
-	
-	public static void addMayAbortEdge( long ttID, long tID )
-	{
-		Edge edge = new Edge(ttID, tID);
-		mayAbortEdge.add(edge);
-	}
+
 	
 	public static void removeTransaction( long transactionID )
 	{
-		/*
-		for ( int i=0; i<mayAbortEdge.size(); i++ )
-		{
-			if ( mayAbortEdge.get(i).getNodeB() == transactionID )
-			{
-				DGT.get(mayAbortEdge.get(i).getNodeA()).remove(mayAbortEdge.get(i).getNodeB());
-			}
-			//System.out.println("PSSI Remove Edge 2 " + mayAbortEdge.get(i).getNodeA() + " " + mayAbortEdge.get(i).getNodeB());
-		}
-		*/
+		LinkedList<Long> nodeList = DGTRV.get(transactionID);
 		
+		Long longid = new Long(transactionID);
+		
+		for ( int i=0; i<nodeList.size(); i++ )
+		{
+			if ( DGT.get(nodeList.get(i)) == null )
+				System.out.println("AAA");
+			DGT.get(nodeList.get(i)).remove(longid);
+		}
+		
+		nodeList = DGT.get(transactionID);
+		
+		for ( int i=0; i<nodeList.size(); i++ )
+		{
+			if ( DGTRV.get(nodeList.get(i)) == null )
+				System.out.println("AAA");
+			DGTRV.get(nodeList.get(i)).remove(longid);
+		}
 		
 		DGT.remove(transactionID);
+		DGTRV.remove(transactionID);
 	}
 	
 	
 	
-	public static boolean commitTransaction( long tID )
+	public static boolean commitTransaction( long tID, int updateRow, int[] selectRow )
 	{
 		Vector<PSSIOperation> transactionList = PSSITransactionManager.getTransaction(tID).getOperationList();
 		Vector<PSSIOperation> lockList;
@@ -103,20 +105,23 @@ public class PSSIJudge
 		long commitTID;
 		boolean returnMessage = false;
 		
-		ReentrantReadWriteLock.WriteLock transReadCTLock = null;
-		ReentrantReadWriteLock.WriteLock transReadTLock = null;
+		PSSILockManager.addUpdateOperation(tID, updateRow);
+		PSSILockManager.addSelectOperation(tID, selectRow);
 		
-		mayAbortEdge.clear();
+		ReentrantReadWriteLock.ReadLock transReadCTLock = null;
+		ReentrantReadWriteLock.WriteLock transWriteTLock = null;
+		
+		//mayAbortEdge.clear();
 		
 		//System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA   " + tID);
 		
-		transReadTLock = PSSITransactionManager.getWriteLock(tID);
+		transWriteTLock = PSSITransactionManager.getWriteLock(tID);
 		
 		
-		if( !transReadTLock.tryLock() )
+		if( !transWriteTLock.tryLock() )
 		{
 			//System.out.println("PSSI Wait Current Read Transaction" + tID);
-			transReadTLock.lock();
+			transWriteTLock.lock();
 		}
 		
 		//System.out.println("PSSI get Current Read Transaction" + tID);
@@ -148,7 +153,7 @@ public class PSSIJudge
 					continue;
 				}
 				
-				transReadCTLock = PSSITransactionManager.getWriteLock(commitTID);
+				transReadCTLock = PSSITransactionManager.getReadLock(commitTID);
 				
 				if( !transReadCTLock.tryLock() )
 				{
@@ -182,6 +187,7 @@ public class PSSIJudge
 				
 				if ( PSSITransactionManager.getTransactionEndTime(commitTID) >PSSITransactionManager.getTransactionStartTime(tID) )
 				{
+					//System.out.println(tID);
 					if (  transactionList.get(i).getRW().equals("r") && lockList.get(j).getRW().equals("w") )
 					{
 						addEdge(tID, commitTID);
@@ -189,8 +195,6 @@ public class PSSIJudge
 					else if (  transactionList.get(i).getRW().equals("w") && lockList.get(j).getRW().equals("r") )
 					{
 						addEdge(commitTID, tID);
-						
-						addMayAbortEdge(commitTID, tID);
 					}
 				}
 				else
@@ -198,8 +202,6 @@ public class PSSIJudge
 					if (  transactionList.get(i).getRW().equals("w") || lockList.get(j).getRW().equals("w") )
 					{
 						addEdge(commitTID,tID);
-						
-						addMayAbortEdge(commitTID, tID);
 					}
 				}
 				
@@ -210,7 +212,7 @@ public class PSSIJudge
 		}
 		
 		//System.out.println("PSSI Release Current Transaction" + tID);
-		transReadTLock.unlock();
+		transWriteTLock.unlock();
 		
 		mark.clear();
 		returnMessage = judgeCircle(tID);

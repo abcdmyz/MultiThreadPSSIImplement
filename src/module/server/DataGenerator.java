@@ -28,12 +28,12 @@ public class DataGenerator
 		if ( rate < Parameter.hotspotAccessRate )
 		{
 			temp = random.nextLong();
-			kseq = (int) Math.abs( temp % Parameter.hotspotSize );
+			kseq = (int) Math.abs( temp % Parameter.hotspotSize ) + 1;
 		}
 		else
 		{
 			temp = random.nextLong();
-			kseq = (int) Math.abs( temp % ( Parameter.dataSetSize - Parameter.hotspotSize)) + Parameter.hotspotSize;
+			kseq = (int) Math.abs( temp % ( Parameter.dataSetSize - Parameter.hotspotSize)) + Parameter.hotspotSize + 1;
 		}
 		
 		return kseq;	

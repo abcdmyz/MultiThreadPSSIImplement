@@ -23,23 +23,26 @@ public class ExecuteAPSSIUpdate
 	
 	private static ReentrantLock commitLock = new ReentrantLock();
 	
-	public void execute( Connection connection, long transactionID, int kSeq, int fraction ) throws InterruptedException
+	public void execute( Connection connection, long transactionID, int kSeq, int fraction, int[] selectRow) throws InterruptedException
 	{
+		
 		if ( getLock(transactionID, kSeq) )
 		{
 			excuteUpdate(connection, kSeq, fraction);
 			
-			PSSILockManager.addUpdateOperation(transactionID, kSeq);
+			//PSSILockManager.addUpdateOperation(transactionID, kSeq);
 			PSSITransactionManager.addUpdateOperation(transactionID, kSeq);
 			
-			if ( !PSSIDetect(transactionID) )
+			if ( !PSSIDetect(transactionID, kSeq, selectRow) )
 			{
 				//System.out.println("**********PSSI NO Cycle " +  transactionID + " Commit");
 				
+				/*
 				if ( !commitLock.tryLock() )
 				{
 					commitLock.tryLock();
 				}
+				*/
 				
 				commitTransaction(connection, transactionID, kSeq);
 				
@@ -53,6 +56,7 @@ public class ExecuteAPSSIUpdate
 			}
 			
 			PSSIJudge.getDGTLock().unlock();
+			
 		}
 		else
 		{
@@ -63,24 +67,42 @@ public class ExecuteAPSSIUpdate
 		}
 		
 		
-		SILockManager.getLock(kSeq).unlock();	
+		SILockManager.getLock(kSeq).unlock();
+		//System.out.println(SILockManager.getLock(kSeq).toString());	
 	}
 	
-	public boolean PSSIDetect( long transactionID )
+	public boolean PSSIDetect( long transactionID, int kSeq, int[] selectRow )
 	{
+		/**
+		 * PSSI Judge Lock
+		 */
 		if ( !PSSIJudge.getDGTLock().tryLock() )
 		{
 			PSSIJudge.getDGTLock().lock();
 		}
-			
-		return PSSIJudge.commitTransaction(transactionID);
+		
+		return PSSIJudge.commitTransaction(transactionID, kSeq, selectRow);
 	}
 
 	
 	public boolean getLock( long transactionID, int kSeq ) throws InterruptedException
 	{
+		//Read LastLocker
 		ReentrantReadWriteLock.ReadLock transReadLock = null;
+
+		/*
+		if ( !SILockManager.checkLockExist(kSeq) )
+		{
+			if ( !SILockManager.getNewLock().tryLock() )
+			{
+				SILockManager.getNewLock().lock();
+			}
+		}
+		*/
 		
+		/**
+		 * !Update kSeq
+		 */
 		if ( !SILockManager.getLock(kSeq).tryLock() )
 		{
 			//System.out.println("========Transaction " + transactionID  + " wait");
@@ -88,15 +110,26 @@ public class ExecuteAPSSIUpdate
 		    
 			//System.out.println("========Transaction " + transactionID + " last locker " + PSSILockManager.getLastLocker(kSeq) + " " + PSSITransactionManager.getTransactionState(PSSILockManager.getLastLocker(kSeq))  );
 			
+			if ( PSSILockManager.getLastLocker(kSeq) == -1 )
+			{
+				return true;
+			}
+			
+			/**
+			 * Read LastLocker
+			 */
 			transReadLock = PSSITransactionManager.getReadLock(PSSILockManager.getLastLocker(kSeq));
 			
+		
 			if( !transReadLock.tryLock() )
 			{
-				//System.out.println("GetLock Wait to Read T_State" + PSSILockManager.getLastLocker(kSeq));
+				//System.out.println("GetLock Wait to Read T_State " + PSSILockManager.getLastLocker(kSeq));
 				transReadLock.lock();
 			}
 			
-			//System.out.println("GetLock get to Read T_State" + PSSILockManager.getLastLocker(kSeq));
+			//System.out.println("GetLock get to Read T_State " + PSSILockManager.getLastLocker(kSeq));
+			
+			
 			
 			if ( PSSITransactionManager.getTransactionState(PSSILockManager.getLastLocker(kSeq)).equals("commit") )
 			{
@@ -112,17 +145,24 @@ public class ExecuteAPSSIUpdate
 			//System.out.println("=========Transactin " + transactionID + " get lock");
 			return true;
 		}
+		
+		
 	}
 	
 	public void excuteUpdate( Connection connection, int kSeq, int fraction )
 	{
-		//DataOperation.updataARow(connection, kSeq, fraction);
+		DataOperation.updataARow(connection, kSeq, fraction);
 	}
 	
 	public void commitTransaction( Connection connection, long transactionID, int kSeq )
 	{
+		
 		ReentrantReadWriteLock.WriteLock transWriteLock = null;
 		
+		
+		/**
+		 * Commit Transaction Lock
+		 */
 		transWriteLock = PSSITransactionManager.getWriteLock(transactionID);
 		
 		if( !transWriteLock.tryLock() )
@@ -154,6 +194,9 @@ public class ExecuteAPSSIUpdate
 	{
 		ReentrantReadWriteLock.WriteLock transWriteLock = null;
 		
+		/**
+		 * Abort Transaction Lock
+		 */
 		transWriteLock = PSSITransactionManager.getWriteLock(transactionID);
 		
 		if( !transWriteLock.tryLock() )

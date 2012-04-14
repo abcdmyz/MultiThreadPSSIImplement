@@ -38,9 +38,8 @@ public class PSSIServerRun implements Runnable
 		
 		int[] selectRow = new int[Parameter.selectSize];
 		int updateRow;
-		int[] selectPosition = new int[Parameter.selectSize];
+		
 		int average, i, j, k, fraction;
-		PSSITransaction transaction = new PSSITransaction();
 		
 		
 		Connection connection = null;
@@ -62,13 +61,15 @@ public class PSSIServerRun implements Runnable
 			e.printStackTrace();
 		}
 		
-		for ( k=0; k<Parameter.transactionPeerThread; k++ )
+		for ( k=0; k<Parameter.transactionPerThread; k++ )
 		{
 			PSSITransactionManager.startTransaction(transactionID);
 			PSSIJudge.startTransaction(transactionID);
 		
 			selectRow = RandomRows.randomSelectRows(transactionID);
 			updateRow = RandomRows.randomAUpdateRow(selectRow, transactionID);
+			
+			
 			
 			//updateRow = RandomRows.randomSelectRow(transactionID);
 			//selectRow = RandomRows.randomUpdateRow(updateRow, transactionID);
@@ -78,10 +79,13 @@ public class PSSIServerRun implements Runnable
 			average = DataOperation.selectData(connection, selectRow);
 			fraction = (int) (average*0.001); 
 			
+			//for ( i=0; i<selectRow.length; i++ )
+				//System.out.println("aa " + transactionID + " " + selectRow[i] + " " + PSSILockManager.checkLockExist(selectRow[i]));
+			
 			/**
 			 * For PSSI
 			 */
-			PSSILockManager.addSelectOperation(transactionID, selectRow);
+			//PSSILockManager.addSelectOperation(transactionID, selectRow);
 			PSSITransactionManager.addSelectOperation(transactionID, selectRow);
 			/**
 			 * For PSSI
@@ -91,13 +95,15 @@ public class PSSIServerRun implements Runnable
 			ExecuteAPSSIUpdate executeAUpdate = new ExecuteAPSSIUpdate();
 			try
 			{
-				executeAUpdate.execute(connection, transactionID, updateRow, fraction );
+				executeAUpdate.execute(connection, transactionID, updateRow, fraction, selectRow );
 			}
 			catch ( InterruptedException e1 )
 			{
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
+			
+			
 			
 			
 			transactionID++;

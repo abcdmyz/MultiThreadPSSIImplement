@@ -38,7 +38,8 @@ public class Main
 			JDBCConnection.initial();
 			
 			//DatabaseStartUp.generateData();
-			//HotSpot.generateHotspotData();
+			
+			
 			
 			PSSITransactionManager.initial();
 			PSSILockManager.initial();
@@ -46,8 +47,8 @@ public class Main
 			SILockManager.initial();
 			PSSIJudge.initial();
 			
-			TwoPLLockManager.initial();
-			TwoPLTransactionManager.initial();
+			//TwoPLLockManager.initial();
+			//TwoPLTransactionManager.initial();
 			
 			ExecuteTwoPL.initial();
 			
@@ -59,32 +60,31 @@ public class Main
 			
 			totalTime =  (double)(endTime-startTime)/1000;
 			
-			//System.out.println("PSSI");
-			System.out.println("2PL");
+			System.out.println("PSSI");
+			//System.out.println("2PL");
 			
+		
 			System.out.println("Total Hotspot Row: " + Parameter.hotspotSize);
-			System.out.println("Total Transaction: " + Parameter.transactionPeerThread * Parameter.threadSize);
+			System.out.println("HostSpot Access Rate: " + Parameter.hotspotAccessRate);
+			System.out.println("Total Transaction: " + Parameter.transactionPerThread * Parameter.threadSize);
 			System.out.println("Total Thread: " + Parameter.threadSize);
 			System.out.println("Select " + Parameter.selectSize + " Update " + Parameter.updateSize);
-			
-			System.out.println("Total committed Transaction: " + ExecuteTwoPL.getCommittedTransactionCount());
-			//System.out.println("Total committed Transaction: " + ExecuteAPSSIUpdate.getCommittedTransactionCount());
-			
 			System.out.println("Total Time: " + totalTime);
+			
+			/*
+			System.out.println("Total committed Transaction: " + ExecuteTwoPL.getCommittedTransactionCount());
 			System.out.println("Transaction Peer Second: " + (int)((ExecuteTwoPL.getCommittedTransactionCount())/totalTime));
-			
-			
 			System.out.println("rw Conflict: " + ExecuteTwoPL.getrwConflict());
+			*/
 			
-			System.out.println();
 			
-			//System.out.println("Total FUW Abort: " + ExecuteAPSSIUpdate.getFUWAbort());
-			//System.out.println("Total PSSI Abort: " + ExecuteAPSSIUpdate.getPSSIAbort());
-			//System.out.println("Transaction Peer Second: " + (int)((ExecuteAPSSIUpdate.getCommittedTransactionCount())/totalTime));
-			//System.out.println("FUW Abort Peer Second: " + (int)(ExecuteAPSSIUpdate.getFUWAbort()/totalTime));
-			//System.out.println("PSSI Abort Peer Second: " + (int)(ExecuteAPSSIUpdate.getPSSIAbort()/totalTime));
+			System.out.println("Total committed Transaction: " + ExecuteAPSSIUpdate.getCommittedTransactionCount());	
+			System.out.println("Total FUW Abort: " + ExecuteAPSSIUpdate.getFUWAbort());
+			System.out.println("Total PSSI Abort: " + ExecuteAPSSIUpdate.getPSSIAbort());
+			System.out.println("Transaction Peer Second: " + (int)((ExecuteAPSSIUpdate.getCommittedTransactionCount())/totalTime));
+			System.out.println("FUW Abort Peer Second: " + (int)(ExecuteAPSSIUpdate.getFUWAbort()/totalTime));
+			System.out.println("PSSI Abort Peer Second: " + (int)(ExecuteAPSSIUpdate.getPSSIAbort()/totalTime));
 			
-			//System.out.print("Connection Count: " + JDBCConnection.getConnectionCount());
 		}
 	}
 }

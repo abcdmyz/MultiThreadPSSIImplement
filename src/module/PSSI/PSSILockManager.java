@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.swing.text.html.HTMLDocument.Iterator;
 
-import module.server.HotSpot;
+
 import module.setting.Parameter;
 
 
@@ -25,17 +25,27 @@ public class PSSILockManager
 		
 		int i;
 		
-		for ( i=0; i<Parameter.hotspotSize; i++ )
+		for ( i=1; i<=Parameter.dataSetSize; i++ )
 		{
-			int kSeq = HotSpot.getHotspotData(i);
-			PSSILock lock = new PSSILock(kSeq);		
-			lockTable.put(kSeq, lock);
+			PSSILock lock = new PSSILock(i);		
+			lockTable.put(i, lock);
 		}
 	}
 	
-	public static boolean checkKey( int key )
+	public static boolean checkLockExist( int kseq )
 	{
-		return  lockTable.containsKey(key);
+		return lockTable.containsKey(kseq);
+	}
+	
+	public static PSSILock getLock( int kseq )
+	{
+		if ( !lockTable.containsKey(kseq) )
+		{
+			PSSILock lock = new PSSILock(kseq);		
+			lockTable.put(kseq, lock);
+		}
+		
+		return lockTable.get(kseq);
 	}
 	
 	public static void  addUpdateOperation( long transactionID, int kSeq )
@@ -45,7 +55,36 @@ public class PSSILockManager
 		lock.addOperation(transactionID, kSeq, "w");
 	}
 	
-
+	
+	public static void addSelectOperation( long transactionID, int[] selectRow )
+	{
+		int i;
+		PSSILock lock = new PSSILock();
+		
+		for ( i=0; i<Parameter.selectSize; i++ )
+		{
+			lock = lockTable.get(selectRow[i]);
+			
+			//System.out.println(selectRow[i] + " " + lockTable.containsKey(selectRow[i]) + " " + lock.toString());
+			
+			lock.addOperation(transactionID, selectRow[i], "r");
+			
+			//lock.printOperationList();
+			
+		}
+	}
+	
+	
+	public static long getLastLocker( int kSeq )
+	{
+		return lockTable.get(kSeq).getLastLocker();
+	}
+	
+	public static void setLastLocker( int kSeq, long transactionID )
+	{
+		lockTable.get(kSeq).setLastLocker(transactionID);
+	}
+	
 	public static void abortTransaction( long transactionID )
 	{
 		PSSITransaction transaction = PSSITransactionManager.getTransaction(transactionID);
@@ -87,39 +126,6 @@ public class PSSILockManager
 			}
 			
 		}
-	}
-	
-	public static PSSILock getLock( int kSeq )
-	{
-		return lockTable.get(kSeq);
-	}
-	
-	public static void addSelectOperation( long transactionID, int[] selectRow )
-	{
-	
-		int i;
-		PSSILock lock = new PSSILock();
-		
-		for ( i=0; i<Parameter.selectSize; i++ )
-		{
-			lock = lockTable.get(selectRow[i]);
-			
-			lock.addOperation(transactionID, selectRow[i], "r");
-			
-			//lock.printOperationList();
-			
-		}
-	}
-	
-	
-	public static long getLastLocker( int kSeq )
-	{
-		return lockTable.get(kSeq).getLastLocker();
-	}
-	
-	public static void setLastLocker( int kSeq, long transactionID )
-	{
-		lockTable.get(kSeq).setLastLocker(transactionID);
 	}
 	
 }
