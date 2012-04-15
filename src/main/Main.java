@@ -1,5 +1,9 @@
 package main;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.concurrent.CountDownLatch;
 
@@ -25,10 +29,22 @@ import module.setting.Parameter;
 
 public class Main
 {
-	public static void main( String[] args ) throws SQLException, InterruptedException
+	public static void main( String[] args ) throws SQLException, InterruptedException, FileNotFoundException
 	{
-		//for ( int i=0; i<5; i++ )
+		PrintWriter printFile = new PrintWriter("e:\\a.txt");
+		
+		
+		
+		//for ( int i=0; i<20; i++ )
+		
 		{
+			
+			/*
+			String OUTPUT = "C:/output.txt";
+			 PrintStream outstream = null; 
+			 outstream = new PrintStream(new FileOutputStream(OUTPUT));
+			*/
+			
 			CountDownLatch cdl = new CountDownLatch(Parameter.threadSize);
 			long startTime, endTime;
 			double totalTime;
@@ -89,5 +105,6 @@ public class Main
 			System.out.println("Node Per Thread: " + Parameter.nodeKeppPerThread);
 			
 		}
+
 	}
 }

@@ -50,9 +50,17 @@ public class PSSILockManager
 	
 	public static void  addUpdateOperation( long transactionID, int kSeq )
 	{
+		if ( !lockTable.get(kSeq).getWriteLock().tryLock() )
+		{
+			System.out.println("Lock Manager Wait Add Update Transaction" + transactionID);
+			lockTable.get(kSeq).getWriteLock().lock();
+		}
+		
 		PSSILock lock = lockTable.get(kSeq);
 		
 		lock.addOperation(transactionID, kSeq, "w");
+		
+		lockTable.get(kSeq).getWriteLock().unlock();
 	}
 	
 	
@@ -63,6 +71,12 @@ public class PSSILockManager
 		
 		for ( i=0; i<Parameter.selectSize; i++ )
 		{
+			if ( !lockTable.get(selectRow[i]).getWriteLock().tryLock() )
+			{
+				System.out.println("Lock Manager Wait Add Select Transaction" + transactionID);
+				lockTable.get(selectRow[i]).getWriteLock().lock();
+			}
+			
 			lock = lockTable.get(selectRow[i]);
 			
 			//System.out.println(selectRow[i] + " " + lockTable.containsKey(selectRow[i]) + " " + lock.toString());
@@ -71,6 +85,7 @@ public class PSSILockManager
 			
 			//lock.printOperationList();
 			
+			lockTable.get(selectRow[i]).getWriteLock().unlock();
 		}
 	}
 	
@@ -90,7 +105,6 @@ public class PSSILockManager
 		PSSITransaction transaction = PSSITransactionManager.getTransaction(transactionID);
 		PSSILock lock = new PSSILock();
 		Vector<PSSIOperation> transactionOperationList = transaction.getOperationList();
-		Vector<PSSIOperation> lockOperationList = transaction.getOperationList();
 		int kSeq;
 		PSSIOperation operation = new PSSIOperation();
 		
@@ -98,33 +112,16 @@ public class PSSILockManager
 		{
 			kSeq = transactionOperationList.get(i).getkSeq();
 			
-			lock = lockTable.get(kSeq);
-			lockOperationList = lock.getOperationList();
+			if ( !lockTable.get(kSeq).getWriteLock().tryLock() )
+			{
+				System.out.println("Lock Manager Wait Abort Transaction" + transactionID);
+				lockTable.get(kSeq).getWriteLock().lock();
+			}
 			
-			java.util.Iterator<PSSIOperation> iter = lockOperationList.iterator();
+			removeTransactionbyKseq( transactionID, transactionOperationList.get(i).getkSeq());
 			 
-			/*
-			while ( iter.hasNext() )
-			{
-				operation = iter.next();
-				
-				if ( operation.getTransactionID() == transactionID )
-				{
-					System.out.println("~~~~~remove " + operation.getTransactionID() + " " + operation.getkSeq() );
-					iter.remove();
-				}
-			}
-			*/
-			
-			for ( int j=0; j<lockOperationList.size(); j++ )
-			{
-				if ( lockOperationList.get(j).getTransactionID() == transactionID )
-				{
-					//System.out.println("~~~~~remove " +  lockOperationList.get(j).getTransactionID() + " " +  lockOperationList.get(j).getkSeq() );
-					lockOperationList.remove(j);
-				}
-			}
-			
+	
+			lockTable.get(kSeq).getWriteLock().unlock();
 		}
 	}
 	

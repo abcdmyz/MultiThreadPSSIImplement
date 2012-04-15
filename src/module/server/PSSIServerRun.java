@@ -1,5 +1,6 @@
 package module.server;
 
+import java.io.FileNotFoundException;
 import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
@@ -101,6 +102,11 @@ public class PSSIServerRun implements Runnable
 			{
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
+			}
+			catch ( FileNotFoundException e )
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 			
 			

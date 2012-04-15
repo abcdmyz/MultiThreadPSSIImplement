@@ -17,6 +17,7 @@ public class PSSILock
 	{
 		operationList.clear();
 		lastLocker = -1;
+		rwLock = new ReentrantReadWriteLock();
 	}	
 	
 	public PSSILock( int kSeq )
@@ -24,8 +25,19 @@ public class PSSILock
 		this.kSeq = kSeq;
 		operationList.clear();
 		lastLocker = -1;
+		rwLock = new ReentrantReadWriteLock();
 	}
 
+	public ReentrantReadWriteLock.ReadLock getReadLock()
+	{
+		return rwLock.readLock();
+	}
+	
+	public ReentrantReadWriteLock.WriteLock getWriteLock()
+	{
+		return rwLock.writeLock();
+	}
+	
 	public int getKSeq()
 	{
 		return kSeq;

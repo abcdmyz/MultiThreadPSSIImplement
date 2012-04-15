@@ -1,5 +1,6 @@
 package module.server;
 
+import java.io.FileNotFoundException;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
@@ -23,15 +24,15 @@ public class ExecuteAPSSIUpdate
 	
 	private static ReentrantLock commitLock = new ReentrantLock();
 	
-	public void execute( Connection connection, long transactionID, int kSeq, int fraction, int[] selectRow) throws InterruptedException
+	public void execute( Connection connection, long transactionID, int kSeq, int fraction, int[] selectRow) throws InterruptedException, FileNotFoundException
 	{
 		
 		if ( getLock(transactionID, kSeq) )
 		{
 			excuteUpdate(connection, kSeq, fraction);
 			
-			commitTransaction(connection, transactionID, kSeq);
-			/*
+			//commitTransaction(connection, transactionID, kSeq);
+			
 			PSSILockManager.addUpdateOperation(transactionID, kSeq);
 			PSSILockManager.addSelectOperation(transactionID, selectRow);
 			
@@ -42,20 +43,20 @@ public class ExecuteAPSSIUpdate
 			
 			if ( !PSSIDetect(transactionID, kSeq, selectRow) )
 			{
-				//System.out.println("**********PSSI NO Cycle " +  transactionID + " Commit");
+				System.out.println("**********PSSI NO Cycle " +  transactionID + " Commit");
 				commitTransaction(connection, transactionID, kSeq);
 				
 				
 			}
 			else
 			{
-				//System.out.println("**********PSSI Has Cycle " +  transactionID + " Abort");
+				System.out.println("**********PSSI Has Cycle " +  transactionID + " Abort");
 				abortTransaction(connection, transactionID, kSeq);
 				addPSSIAbort();
 			}
 			
-			PSSIJudge.getDGTLock().unlock();
-			*/
+			//PSSIJudge.getDGTLock().unlock();
+			
 		}
 		else
 		{
@@ -70,15 +71,17 @@ public class ExecuteAPSSIUpdate
 		//System.out.println(SILockManager.getLock(kSeq).toString());	
 	}
 	
-	public boolean PSSIDetect( long transactionID, int kSeq, int[] selectRow )
+	public boolean PSSIDetect( long transactionID, int kSeq, int[] selectRow ) throws InterruptedException, FileNotFoundException
 	{
 		/**
 		 * PSSI Judge Lock
 		 */
-		if ( !PSSIJudge.getDGTLock().tryLock() )
+		
+		//if ( !PSSIJudge.getDGTLock().tryLock() )
 		{
-			PSSIJudge.getDGTLock().lock();
+			//PSSIJudge.getDGTLock().lock();
 		}
+		
 		
 		return PSSIJudge.commitTransaction(transactionID, kSeq, selectRow);
 	}
