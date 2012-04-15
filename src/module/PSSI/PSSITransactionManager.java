@@ -48,11 +48,24 @@ public class PSSITransactionManager
 		transaction.addOperation(transactionID, kSeq, "w");
 	}
 	
+	public static void removeTransaction( long transactionID )
+	{
+		transactionTable.remove(transactionID);
+	}
+	
 	public static PSSITransaction getTransaction( long transactionID )
 	{
 		PSSITransaction transaction = transactionTable.get(transactionID);
 		
 		return transaction;
+	}
+	
+	public static boolean checkTransactionExist( long transactionID )
+	{
+		if ( transactionTable.get(transactionID) == null )
+			return false;
+		return true;
+				
 	}
 	
 	public static boolean checkCommitTransaction( long transactionID )

@@ -30,20 +30,19 @@ public class ExecuteAPSSIUpdate
 		{
 			excuteUpdate(connection, kSeq, fraction);
 			
-			//PSSILockManager.addUpdateOperation(transactionID, kSeq);
+			commitTransaction(connection, transactionID, kSeq);
+			/*
+			PSSILockManager.addUpdateOperation(transactionID, kSeq);
+			PSSILockManager.addSelectOperation(transactionID, selectRow);
+			
 			PSSITransactionManager.addUpdateOperation(transactionID, kSeq);
+			PSSITransactionManager.addSelectOperation(transactionID, selectRow);
+		
+			
 			
 			if ( !PSSIDetect(transactionID, kSeq, selectRow) )
 			{
 				//System.out.println("**********PSSI NO Cycle " +  transactionID + " Commit");
-				
-				/*
-				if ( !commitLock.tryLock() )
-				{
-					commitLock.tryLock();
-				}
-				*/
-				
 				commitTransaction(connection, transactionID, kSeq);
 				
 				
@@ -56,7 +55,7 @@ public class ExecuteAPSSIUpdate
 			}
 			
 			PSSIJudge.getDGTLock().unlock();
-			
+			*/
 		}
 		else
 		{
@@ -239,6 +238,7 @@ public class ExecuteAPSSIUpdate
 	public synchronized void addPSSIAbort()
 	{
 		PSSIAbort++;
+		//System.out.println(" " + PSSIAbort);
 	}
 	
 	public static int getPSSIAbort()
@@ -246,7 +246,7 @@ public class ExecuteAPSSIUpdate
 		return PSSIAbort;
 	}
 	
-	public static void addCommittedTransactionCount()
+	public synchronized void addCommittedTransactionCount()
 	{
 		committedTransaction++;
 	}

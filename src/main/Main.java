@@ -66,8 +66,9 @@ public class Main
 		
 			System.out.println("Total Hotspot Row: " + Parameter.hotspotSize);
 			System.out.println("HostSpot Access Rate: " + Parameter.hotspotAccessRate);
-			System.out.println("Total Transaction: " + Parameter.transactionPerThread * Parameter.threadSize);
 			System.out.println("Total Thread: " + Parameter.threadSize);
+			System.out.println("Transaction Per Thread: " + Parameter.transactionPerThread);
+			System.out.println("Total Transaction: " + Parameter.transactionPerThread * Parameter.threadSize);
 			System.out.println("Select " + Parameter.selectSize + " Update " + Parameter.updateSize);
 			System.out.println("Total Time: " + totalTime);
 			
@@ -84,6 +85,8 @@ public class Main
 			System.out.println("Transaction Peer Second: " + (int)((ExecuteAPSSIUpdate.getCommittedTransactionCount())/totalTime));
 			System.out.println("FUW Abort Peer Second: " + (int)(ExecuteAPSSIUpdate.getFUWAbort()/totalTime));
 			System.out.println("PSSI Abort Peer Second: " + (int)(ExecuteAPSSIUpdate.getPSSIAbort()/totalTime));
+			
+			System.out.println("Node Per Thread: " + Parameter.nodeKeppPerThread);
 			
 		}
 	}

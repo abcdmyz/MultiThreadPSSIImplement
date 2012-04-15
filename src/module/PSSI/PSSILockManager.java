@@ -128,4 +128,33 @@ public class PSSILockManager
 		}
 	}
 	
+	public static void removeTransactionbyKseq( long transactionID, int Kseq)
+	{	
+		PSSILock lock = lockTable.get(Kseq);
+		
+		Vector<PSSIOperation> lockList = lock.getOperationList();
+		java.util.Iterator<PSSIOperation> locklistIterator = lockList.iterator();
+		PSSIOperation lockOperation;
+		long tID;
+		int index = -1;
+	
+		while ( locklistIterator.hasNext() )
+		{
+			lockOperation = (PSSIOperation) locklistIterator.next();
+			
+			tID = lockOperation.getTransactionID();
+			
+			if ( tID == transactionID )
+			{
+				index = lockList.indexOf(lockOperation);
+				break;
+			}
+		}
+		
+		if ( index != -1 )
+			lockList.remove(index);
+		
+		//System.out.println("remove " + transactionID + " " + Kseq + " " + lock.getOperationList().contains(tID));
+	}
+	
 }

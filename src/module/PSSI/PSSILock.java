@@ -2,12 +2,15 @@ package module.PSSI;
 
 import java.util.LinkedList;
 import java.util.Vector;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class PSSILock
 {
 	private int kSeq;
 	private Vector<PSSIOperation> operationList = new Vector<PSSIOperation>();
 	private long lastLocker;
+	
+	ReentrantReadWriteLock rwLock;
 	
 	
 	public PSSILock()

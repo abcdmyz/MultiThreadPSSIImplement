@@ -94,7 +94,7 @@ public class ExecuteTwoPL
 		return true;
 	}
 	
-	public static void addCommittedTransactionCount()
+	public synchronized void addCommittedTransactionCount()
 	{
 		committedTransaction++;
 	}
@@ -104,7 +104,7 @@ public class ExecuteTwoPL
 		return committedTransaction;
 	}
 	
-	public static void addrwConflict()
+	public synchronized void addrwConflict()
 	{
 		rwConflict++;
 	}

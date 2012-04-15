@@ -86,7 +86,7 @@ public class PSSIServerRun implements Runnable
 			 * For PSSI
 			 */
 			//PSSILockManager.addSelectOperation(transactionID, selectRow);
-			PSSITransactionManager.addSelectOperation(transactionID, selectRow);
+			//PSSITransactionManager.addSelectOperation(transactionID, selectRow);
 			/**
 			 * For PSSI
 			 */
