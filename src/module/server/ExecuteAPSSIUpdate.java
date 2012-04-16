@@ -5,6 +5,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 
+import main.Main;
 import module.PSSI.PSSIJudge;
 import module.PSSI.PSSILockManager;
 import module.PSSI.PSSITransactionManager;
@@ -43,14 +44,14 @@ public class ExecuteAPSSIUpdate
 			
 			if ( !PSSIDetect(transactionID, kSeq, selectRow) )
 			{
-				System.out.println("**********PSSI NO Cycle " +  transactionID + " Commit");
+				//Main.logger.warn("**********PSSI NO Cycle " +  transactionID + " Commit");
 				commitTransaction(connection, transactionID, kSeq);
 				
 				
 			}
 			else
 			{
-				System.out.println("**********PSSI Has Cycle " +  transactionID + " Abort");
+				//Main.logger.warn("**********PSSI Has Cycle " +  transactionID + " Abort");
 				abortTransaction(connection, transactionID, kSeq);
 				addPSSIAbort();
 			}

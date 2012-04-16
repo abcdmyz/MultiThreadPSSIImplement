@@ -14,6 +14,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import javax.swing.text.html.HTMLDocument.Iterator;
 
+import main.Main;
 import module.setting.Parameter;
 
 
@@ -164,7 +165,7 @@ public class PSSIJudge
 		if ( returnMessage )
 		{
 			//System.out.println("abort transaction " + tID);
-			removeTransaction(tID);
+			//removeTransaction(tID);
 		}
 		
 		/*
@@ -211,7 +212,7 @@ public class PSSIJudge
 		PSSIOperation transactionOperation;
 		PSSIOperation lockOperation;
 		
-		PrintWriter printFile = new PrintWriter("e:\\a.txt");
+		//PrintWriter printFile = new PrintWriter("e:\\a.txt");
 		
 		/**
 		 * Partition Graph
@@ -257,16 +258,16 @@ public class PSSIJudge
 				}
 				*/
 				
-				
-				System.out.println("1 Transaction " + tID + " Wait " + tID + " Fail Restart");
-				
-				System.out.println("1 return");
+				//Main.logger.warn("1 Transaction " + tID + " Wait " + tID + " Fail Restart");
+				//Main.logger.warn("1 return");		
+				//Main.logger.warn("1 return " + tID);
 				
 				return false;
 			}
 	
 			nodeLockList.add(tID);
-			System.out.println("1 Transaction " + tID + " Get " + tID + " Lock");
+			
+			//Main.logger.warn("1 Transaction " + tID + " Get " + tID + " Lock");
 		}
 		/**
 		 * Partition Graph
@@ -279,7 +280,7 @@ public class PSSIJudge
 		
 		if( !transReadTLock.tryLock() )
 		{
-			System.out.println("PSSI Wait Read Current Transaction " + tID);
+			//Main.logger.warn("PSSI Wait Read Current Transaction " + tID);
 			transReadTLock.lock();
 		}
 		
@@ -299,15 +300,16 @@ public class PSSIJudge
 			kSeq = transactionOperation.getkSeq();
 			
 			if ( !PSSILockManager.getLock(kSeq).getReadLock().tryLock() )
+			{ 
+				//Main.logger.warn(tID + " PSSI Wait kseq read lock " + kSeq);
 				PSSILockManager.getLock(kSeq).getReadLock().lock();
+			}
 			
 			lockList = PSSILockManager.getLock(kSeq).getOperationList();
 			
 			
 			if ( lockList == null )
 				continue;
-			
-			//System.out.println(lockList.size());
 			
 			locklistIterator = lockList.iterator();
 			
@@ -328,30 +330,32 @@ public class PSSIJudge
 				}
 				
 				//System.out.println("get " + commitTID + " " + kSeq + " tID " + tID);
-				
+				/*
 				transReadCTLock = PSSITransactionManager.getReadLock(commitTID);
 				
 				if( !transReadCTLock.tryLock() )
 				{
-					System.out.println("PSSI Wait Read Commit Transaction " + commitTID);
+					Main.logger.warn(tID + " PSSI Wait Read Commit Transaction " + commitTID);
+					//System.out.println("PSSI Wait Read Commit Transaction " + commitTID);
 					transReadCTLock.lock();
 				}
+				*/
 				
 				//System.out.println("PSSI get Commit Read Transaction" + commitTID);
 				
 				if ( PSSITransactionManager.checkAbortTransaction(commitTID) )
 				{
-					//System.out.println(commitTID + " abort");
-					//System.out.println("PSSI Release Commit Transaction" + commitTID);
-					transReadCTLock.unlock();
+					
+					//Main.logger.warn(tID + " PSSI Release Commit Transaction" + commitTID);
+					//transReadCTLock.unlock();
 					continue;
 				}
 				
 				if ( !PSSITransactionManager.checkCommitTransaction(commitTID) )
 				{
-					//System.out.println(commitTID + " not commit");
-					//System.out.println("PSSI Release Commit Transaction" + commitTID);
-					transReadCTLock.unlock();
+					
+					//Main.logger.warn(tID + " PSSI Release Commit Transaction" + commitTID);
+					//transReadCTLock.unlock();
 					continue;
 				}
 				
@@ -368,30 +372,35 @@ public class PSSIJudge
 						{
 							nodeID = nodeLockListIterator.next();
 							
-							//System.out.println("nodeID " +  nodeID);
+							//Main.logger.warn("2 Transaction " + tID + " Release " + nodeID + " Lock " + lockTable.get(nodeID).getHoldCount() );
 							
-							System.out.println("2 Transaction " + tID + " Release " + nodeID + " Lock " + lockTable.get(nodeID).getHoldCount() );
 							
 							while ( lockTable.get(nodeID).getHoldCount() > 0 )
 								lockTable.get(nodeID).unlock();
 							
-							System.out.println("2 Transaction " + tID + " Release " + nodeID + " Lock");
+							//Main.logger.warn("2 Transaction " + tID + " Release " + nodeID + " Lock");
 						}
 						
-						System.out.println("2 Transaction " + tID + " Wait " + commitTID + " Fail Restart");
+						//Main.logger.warn("2 Transaction " + tID + " Wait " + commitTID + " Fail Restart");
 						
-						transReadCTLock.unlock();
+						//Main.logger.warn(tID + " 2 PSSI Release Commit Transaction " + commitTID);
+						//Main.logger.warn(tID + " 2 PSSI Release Lock ");
+						//Main.logger.warn(tID + " 2 PSSI Release Read Kseq Lock " + kSeq);
+						
+						//transReadCTLock.unlock();
 						transReadTLock.unlock();
 						PSSILockManager.getLock(kSeq).getReadLock().unlock();
 						
-						System.out.println("2 return");
+						//Main.logger.warn("2 return " + tID);
 						
 						return false;
 					}
 				
 				
 					nodeLockList.add(commitTID);
-					System.out.println("2 Transaction " + tID + " Get " + commitTID + " Lock");
+					
+					//Main.logger.warn("2 Transaction " + tID + " Get " + commitTID + " Lock");
+					
 				}
 				/**
 				 * Partition Graph
@@ -425,13 +434,15 @@ public class PSSIJudge
 				}
 				
 				//System.out.println("PSSI Release Commit Transaction" + commitTID);
-				transReadCTLock.unlock();
+				//transReadCTLock.unlock();
 			}
+			
+			//Main.logger.warn(tID + " PSSI Release Read Kseq Lock " + kSeq);
 			
 			PSSILockManager.getLock(kSeq).getReadLock().unlock();	
 		}
 		
-		//System.out.println("PSSI Release Current Transaction" + tID);
+		//Main.logger.warn(tID + " 2 PSSI Release Lock");
 		transReadTLock.unlock();
 		
 	
@@ -443,7 +454,7 @@ public class PSSIJudge
 		{
 			nodeID = nodeLockListIterator.next();
 			
-			System.out.println("3 Transaction " + tID + " Release " + nodeID + " Lock " + lockTable.get(nodeID).getHoldCount());
+			//Main.logger.warn("3 Transaction " + tID + " Release " + nodeID + " Lock " + lockTable.get(nodeID).getHoldCount());
 			
 			while ( lockTable.get(nodeID).getHoldCount() > 0 )
 				lockTable.get(nodeID).unlock();
@@ -451,7 +462,7 @@ public class PSSIJudge
 			
 		}
 		
-		System.out.println("3 return");
+		//Main.logger.warn("3 return " + tID);
 		
 		
 		return true;

@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.swing.text.html.HTMLDocument.Iterator;
 
 
+import main.Main;
 import module.setting.Parameter;
 
 
@@ -52,13 +53,15 @@ public class PSSILockManager
 	{
 		if ( !lockTable.get(kSeq).getWriteLock().tryLock() )
 		{
-			System.out.println("Lock Manager Wait Add Update Transaction" + transactionID);
+			//Main.logger.warn("Lock Manager Wait Add Update Transaction" + transactionID);
 			lockTable.get(kSeq).getWriteLock().lock();
 		}
 		
 		PSSILock lock = lockTable.get(kSeq);
 		
 		lock.addOperation(transactionID, kSeq, "w");
+		
+		
 		
 		lockTable.get(kSeq).getWriteLock().unlock();
 	}
@@ -73,7 +76,7 @@ public class PSSILockManager
 		{
 			if ( !lockTable.get(selectRow[i]).getWriteLock().tryLock() )
 			{
-				System.out.println("Lock Manager Wait Add Select Transaction" + transactionID);
+				//Main.logger.warn("Lock Manager Wait Add Select Transaction" + transactionID);
 				lockTable.get(selectRow[i]).getWriteLock().lock();
 			}
 			
@@ -114,7 +117,7 @@ public class PSSILockManager
 			
 			if ( !lockTable.get(kSeq).getWriteLock().tryLock() )
 			{
-				System.out.println("Lock Manager Wait Abort Transaction" + transactionID);
+				//Main.logger.warn("Lock Manager Wait Abort Transaction" + transactionID);
 				lockTable.get(kSeq).getWriteLock().lock();
 			}
 			
