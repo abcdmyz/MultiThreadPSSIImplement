@@ -11,7 +11,7 @@ import com.mysql.jdbc.Statement;
 
 public class DatabaseStartUp
 {
-	public static void generateData() throws SQLException
+	public static void generateData() throws SQLException, ClassNotFoundException
 	{
 		long startTime, endTime;
 		
@@ -20,7 +20,7 @@ public class DatabaseStartUp
 		deleteTable();
 		//System.out.println("Delete Table");
 		
-		NewProxyConnection connection = (NewProxyConnection) JDBCConnection.getConnection();
+		Connection connection = (Connection) JDBCConnection.getCommonConnection();
 		connection.setAutoCommit(false);
 		
 		String insertSt = "INSERT INTO bench VALUES (?, ?)";
@@ -55,9 +55,10 @@ public class DatabaseStartUp
 		System.out.println("Total Time " + (int)(endTime-startTime)/1000);
 	}
 	
-	public static void deleteTable() throws SQLException
+	public static void deleteTable() throws SQLException, ClassNotFoundException
 	{
-		NewProxyConnection connection = (NewProxyConnection) JDBCConnection.getConnection();
+		Connection connection = (Connection) JDBCConnection.getCommonConnection();
+		connection.setAutoCommit(false);
 		
 		String deleteString;
 		deleteString = "DELETE FROM bench;";

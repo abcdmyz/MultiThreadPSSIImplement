@@ -10,6 +10,7 @@ import module.PSSI.PSSILockManager;
 import module.PSSI.PSSITransactionManager;
 import module.SI.SILockManager;
 import module.client.ClientRequest;
+import module.database.DatabaseStartUp;
 import module.database.JDBCConnection;
 import module.server.ExecuteAPSSIUpdate;
 import module.server.ExecuteTwoPL;
@@ -25,7 +26,7 @@ public class Main
 
 	//logger.warn("ok");
 	
-	public static void main( String[] args ) throws SQLException, InterruptedException, FileNotFoundException
+	public static void main( String[] args ) throws SQLException, InterruptedException, FileNotFoundException, ClassNotFoundException
 	{
 		
 		
@@ -33,12 +34,16 @@ public class Main
 		
 		int sumTransaction;
 		double sumTime;
+		int sumFUW;
+		int sumPSSI;
 		
 		
 		//for ( int i=0; i<20; i++ )
 		//{	
 			sumTransaction = 0;
 			sumTime = 0;
+			sumFUW = 0;
+			sumPSSI = 0;
 			
 			for ( int j=0; j<10; j++ )
 			{
@@ -50,7 +55,8 @@ public class Main
 				
 				JDBCConnection.initial();
 				
-				//DatabaseStartUp.generateData();
+				//DatabaseStartUp.deleteTable();
+				//0DatabaseStartUp.generateData();
 				
 				
 				
@@ -64,6 +70,7 @@ public class Main
 				//TwoPLTransactionManager.initial();
 				
 				ExecuteTwoPL.initial();
+				ExecuteAPSSIUpdate.initial();
 				
 				ClientRequest.send(cdl);
 				
@@ -74,12 +81,13 @@ public class Main
 				totalTime =  (double)(endTime-startTime)/1000;
 				
 				
-				sumTransaction += ExecuteTwoPL.getCommittedTransactionCount();
+				sumTransaction += ExecuteAPSSIUpdate.getCommittedTransactionCount();
 				sumTime += totalTime;
+				sumFUW += ExecuteAPSSIUpdate.getFUWAbort();
+				sumPSSI += ExecuteAPSSIUpdate.getPSSIAbort();
 				
-				
-				//System.out.println("PSSI");
-				System.out.println("2PL");
+				System.out.println("PSSI");
+				//System.out.println("2PL");
 				
 			
 				System.out.println("Total Hotspot Row: " + Parameter.hotspotSize);
@@ -90,27 +98,29 @@ public class Main
 				System.out.println("Select " + Parameter.selectSize + " Update " + Parameter.updateSize);
 				System.out.println("Total Time: " + totalTime);
 				
-				
+				/*
 				System.out.println("Total committed Transaction: " + ExecuteTwoPL.getCommittedTransactionCount());
 				System.out.println("Transaction Peer Second: " + (int)((ExecuteTwoPL.getCommittedTransactionCount())/totalTime));
 				System.out.println("rw Conflict: " + ExecuteTwoPL.getrwConflict());
+				*/
 				
 				
-				/*
 				System.out.println("Total committed Transaction: " + ExecuteAPSSIUpdate.getCommittedTransactionCount());	
 				System.out.println("Total FUW Abort: " + ExecuteAPSSIUpdate.getFUWAbort());
 				System.out.println("Total PSSI Abort: " + ExecuteAPSSIUpdate.getPSSIAbort());
 				System.out.println("Transaction Peer Second: " + (int)((ExecuteAPSSIUpdate.getCommittedTransactionCount())/totalTime));
 				System.out.println("FUW Abort Peer Second: " + (int)(ExecuteAPSSIUpdate.getFUWAbort()/totalTime));
 				System.out.println("PSSI Abort Peer Second: " + (int)(ExecuteAPSSIUpdate.getPSSIAbort()/totalTime));
-				*/
+				
 				
 				//System.out.println("Node Per Thread: " + Parameter.nodeKeppPerThread);
 			}
 			
 		//}
-			
-			System.out.println("Final Result: " + sumTransaction/sumTime);
+			System.out.println();
+			System.out.println("Final Result-Transaction Per Second " + (int)(sumTransaction/sumTime));
+			System.out.println("Final Result-FWU Abort Per Second " + (int)(sumFUW/sumTime));
+			System.out.println("Final Result-PSSI Abort " + sumPSSI);
 
 	}
 }

@@ -11,12 +11,12 @@ public class Parameter
 	public final static int updateSize = 1;
 	
 	public final static int hotspotSize = 200; 
-	public final static int hotspotAccessRate = 60;
+	public final static int hotspotAccessRate = 70;
 	
-	public final static long transactionPerThread = 30000;	
-	public final static int threadSize = 1;
+	public final static long transactionPerThread = 600;
+	public final static int threadSize = 50;
 	
 	public final static int transactionIDGap = 1000;
 	public final static int transactionIDInitial = 1000;
-	public final static int nodeKeppPerThread = 5;
+	public final static int nodeKeppPerThread = 10;
 }

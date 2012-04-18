@@ -78,7 +78,7 @@ public class PSSIServerRun implements Runnable
 			TransactionOperation.startTransaction(connection);
 			
 			average = DataOperation.selectData(connection, selectRow);
-			fraction = (int) (average*0.001); 
+			fraction = (int) (average*(-0.01)); 
 			
 			//for ( i=0; i<selectRow.length; i++ )
 				//System.out.println("aa " + transactionID + " " + selectRow[i] + " " + PSSILockManager.checkLockExist(selectRow[i]));
